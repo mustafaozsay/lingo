@@ -11,7 +11,14 @@ import { upsertChallengeProgress } from "../actions/challenge-progress";
 import { toast } from "sonner";
 import { reduceHearts } from "../actions/user-progress";
 import { error } from "console";
-import { useAudio } from "react-use";
+import { useAsync, useAudio, useWindowSize, useMount } from "react-use";
+import Image from "next/image";
+import ResultCard from "./result-card";
+import { useRouter } from "next/navigation";
+
+import Confetti from "react-confetti";
+import { useHeartsModal } from "@/store/use-hearts-modal";
+import { usePracticeModal } from "@/store/use-practice-modals";
 
 type Props = {
   initialLessonId: number;
@@ -31,6 +38,20 @@ export default function Quiz({
   initialLessonChallenges,
   userSubscription,
 }: Props) {
+  const { open: openPracticeModal } = usePracticeModal();
+  const { open: openHeartsModal } = useHeartsModal();
+
+  useMount(() => {
+    if (initialPercentage === 100) {
+      openPracticeModal();
+    }
+  });
+
+  const { width, height } = useWindowSize();
+  const router = useRouter();
+
+  const [finishAudio] = useAudio({ src: "/finish.mp3", autoPlay: true });
+
   const [correctAudio, _c, correctControls] = useAudio({ src: "/correct.wav" });
 
   const [incorrectAudio, _ic, incorrectControls] = useAudio({
@@ -39,8 +60,12 @@ export default function Quiz({
 
   const [pending, startTransition] = useTransition();
 
+  const [lessonId, setLessonId] = useState(initialLessonId);
+
   const [hearts, setHearts] = useState(initialHearts);
-  const [percentage, setPercentage] = useState(initialPercentage);
+  const [percentage, setPercentage] = useState(() => {
+    return initialPercentage === 100 ? 0 : initialPercentage;
+  });
   const [challenges] = useState(initialLessonChallenges);
   const [activeIndex, setActiveIndex] = useState(() => {
     const uncompletedIndex = challenges.findIndex(
@@ -94,7 +119,7 @@ export default function Quiz({
         upsertChallengeProgress(challenge.id)
           .then((response) => {
             if (response?.error === "hearts") {
-              console.log("missing hearts");
+              openHeartsModal();
               return;
             }
 
@@ -114,7 +139,7 @@ export default function Quiz({
         reduceHearts(challenge.id)
           .then((response) => {
             if (response?.error === "hearts") {
-              console.error("Missing Hearts");
+              openHeartsModal();
               return;
             }
 
@@ -129,6 +154,46 @@ export default function Quiz({
       });
     }
   };
+
+  if (!challenge) {
+    return (
+      <>
+        {finishAudio}
+        <Confetti
+          width={width}
+          height={height}
+          recycle={false}
+          numberOfPieces={1000}
+          tweenDuration={10000}
+        />
+        <div
+          className="flex flex-col gay-y-4 lg:gap-y-8 max-w-lg mx-auto
+        text-center items-center justify-center h-full"
+        >
+          <Image
+            src="/finish.svg"
+            alt="Finish"
+            className="block lg:hidden"
+            height={50}
+            width={50}
+          />
+          <h1 className="text-xl lg:text-3xl font-bold text-neutral-700">
+            Great job! <br /> You've completed the lesson.
+          </h1>
+
+          <div className="flex items-center gap-x-4 w-full">
+            <ResultCard variant="points" value={challenges.length * 10} />
+            <ResultCard variant="hearts" value={hearts} />
+          </div>
+        </div>
+        <Footer
+          lessonId={lessonId}
+          status="completed"
+          onCheck={() => router.push("/learn")}
+        />
+      </>
+    );
+  }
 
   const title =
     challenge.type === "ASSIST"
