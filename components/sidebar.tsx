@@ -31,7 +31,7 @@ export default function SideBar({ className }: Props) {
         <SidebarItem label="Learn" href="/learn" iconSrc="./learn.svg" />
         <SidebarItem
           label="Leaderboard"
-          href="/learderboard"
+          href="/leaderboard"
           iconSrc="./leaderboard.svg"
         />
         <SidebarItem label="Quests" href="/quests" iconSrc="./quests.svg" />

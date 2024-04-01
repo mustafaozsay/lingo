@@ -1,6 +1,6 @@
 "use client";
 
-import { challengeOptions, challenges } from "@/db/schema";
+import { challengeOptions, challenges, userSubscription } from "@/db/schema";
 import { useState, useTransition } from "react";
 import Header from "./header";
 import QuestionBubble from "./question-bubble";
@@ -28,7 +28,11 @@ type Props = {
   })[];
   initialHearts: number;
   initialPercentage: number;
-  userSubscription: any; // TODO replace with sub
+  userSubscription:
+    | (typeof userSubscription.$inferInsert & {
+        isActive: boolean;
+      })
+    | null;
 };
 
 export default function Quiz({

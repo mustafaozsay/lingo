@@ -4,10 +4,12 @@ import { auth } from "@clerk/nextjs";
 import { eq } from "drizzle-orm";
 import {
   challengeProgress,
+  challenges,
   courses,
   lessons,
   units,
   userProgress,
+  userSubscription,
 } from "./schema";
 
 export const getUSerProgress = cache(async () => {
@@ -35,13 +37,15 @@ export const getUnits = cache(async () => {
     return [];
   }
 
-  // TODO order is needed
   const data = await db.query.units.findMany({
+    orderBy: (units, { asc }) => [asc(units.order)],
     where: eq(units.courseId, userProgress.activeCourseId),
     with: {
       lessons: {
+        orderBy: (lessons, { asc }) => [asc(lessons.order)],
         with: {
           challenges: {
+            orderBy: (challenges, { asc }) => [asc(challenges.order)],
             with: {
               challengeProgress: {
                 where: eq(challengeProgress.userId, userId),
@@ -82,7 +86,16 @@ export const getCourses = cache(async () => {
 export const getCourseById = cache(async (courseId: number) => {
   const data = await db.query.courses.findFirst({
     where: eq(courses.id, courseId),
-    //TODO : populate units and lessons
+    with: {
+      units: {
+        orderBy: (units, { asc }) => [asc(units.order)],
+        with: {
+          lessons: {
+            orderBy: (lessons, { asc }) => [asc(lessons.order)],
+          },
+        },
+      },
+    },
   });
 
   return data;
@@ -119,7 +132,6 @@ export const getCourseProgress = cache(async () => {
   const firstUncompletedLesson = unitInActiveCourse
     .flatMap((unit) => unit.lessons)
     .find((lesson) => {
-      // TODO if smth dosnt work
       return lesson.challenges.some((challenge) => {
         return (
           !challenge.challengeProgress ||
@@ -203,4 +215,48 @@ export const getLessonsPercentage = cache(async () => {
   );
 
   return percentage;
+});
+
+const DAY_IN_MS = 86_400_000;
+
+export const getUserSubscription = cache(async () => {
+  const { userId } = await auth();
+
+  if (!userId) return null;
+
+  const data = await db.query.userSubscription.findFirst({
+    where: eq(userSubscription.userId, userId),
+  });
+
+  if (!data) return null;
+
+  const isActive =
+    data.stripePriceId &&
+    data.stripeCurrentPeriodEnd?.getTime()! + DAY_IN_MS > Date.now();
+
+  return {
+    ...data,
+    isActive: !!isActive,
+  };
+});
+
+export const getTopTenUsers = cache(async () => {
+  const { userId } = await auth();
+
+  if (!userId) {
+    return [];
+  }
+
+  const data = await db.query.userProgress.findMany({
+    orderBy: (userProgress, { desc }) => [desc(userProgress.points)],
+    limit: 10,
+    columns: {
+      userId: true,
+      userName: true,
+      userImageSrc: true,
+      points: true,
+    },
+  });
+
+  return data;
 });
