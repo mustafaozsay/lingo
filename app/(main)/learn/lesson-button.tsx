@@ -10,7 +10,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 type Props = {
-  id: number;
+  id: number | undefined;
   index: number;
   totalCount: number;
   locked?: boolean;

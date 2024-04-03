@@ -7,7 +7,7 @@ import { auth } from "@clerk/nextjs";
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
-export const upsertChallengeProgress = async (challengeID: number) => {
+export const upsertChallengeProgress = async (challengeID: any) => {
   const { userId } = await auth();
 
   if (!userId) {

@@ -59,7 +59,7 @@ export const upsertUserProgress = async (courseId: number) => {
   redirect("/learn");
 };
 
-export const reduceHearts = async (challengeId: number) => {
+export const reduceHearts = async (challengeId: any) => {
   const { userId } = await auth();
 
   if (!userId) {

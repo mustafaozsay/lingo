@@ -4,7 +4,7 @@ import Card from "./card";
 
 type Props = {
   options: (typeof challengeOptions.$inferInsert)[];
-  onSelect: (id: number) => void;
+  onSelect: (id: any) => void;
   status: "correct" | "wrong" | "none";
   selectedOption?: number;
   disabled?: boolean;
@@ -31,7 +31,6 @@ export default function Challenge({
       {options.map((option, i) => (
         <Card
           key={option.id}
-          id={option.id}
           text={option.text}
           imageSrc={option.imageSrc}
           shortcut={`${i + 1}`}

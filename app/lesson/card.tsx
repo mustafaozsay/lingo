@@ -6,9 +6,8 @@ import { useCallback } from "react";
 import { useAudio, useKey } from "react-use";
 
 type Props = {
-  id: number;
-  imageSrc: string | null;
-  audioSrc: string | null;
+  imageSrc: string | null | undefined;
+  audioSrc: string | null | undefined;
   text: string;
   shortcut: string;
   onClick: () => void;
@@ -19,7 +18,6 @@ type Props = {
 };
 
 export default function Card({
-  id,
   imageSrc,
   audioSrc,
   text,
